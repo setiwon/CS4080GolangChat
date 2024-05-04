@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -22,7 +23,7 @@ type client struct {
 	name string
 }
 
-type message struct {
+type clientMessage struct {
 	Method string
 	Body   string
 }
@@ -38,7 +39,7 @@ func (c *client) read() {
 
 		fmt.Printf("%s\n", msg)
 
-		var parsed message
+		var parsed clientMessage
 		parseErr := json.Unmarshal(msg, &parsed)
 		if parseErr != nil {
 			fmt.Printf("Message parse error: %s\n", msg)
@@ -49,7 +50,8 @@ func (c *client) read() {
 			case "name":
 				c.name = parsed.Body
 			case "message":
-				c.room.forward <- []byte(c.name + ": " + parsed.Body)
+				encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "message": parsed.Body})
+				c.room.forward <- encodedMessage
 			}
 		}
 
