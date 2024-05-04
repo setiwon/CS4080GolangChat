@@ -86,7 +86,7 @@
           socket.onmessage = function(e) {
             let data = JSON.parse(e.data);
             if (data.sender === name) {
-              // probably vulnerable to XSS
+              // no longer vulnerable to XSS!
               messages.append(`
               <div class="d-flex justify-content-end">
                 <div class="message-bubble bg-primary text-white">${data.message}</li>

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 
 	"github.com/gorilla/websocket"
 )
@@ -50,7 +51,8 @@ func (c *client) read() {
 			case "name":
 				c.name = parsed.Body
 			case "message":
-				encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "message": parsed.Body})
+				escaped := html.EscapeString(parsed.Body)
+				encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "message": escaped})
 				c.room.forward <- encodedMessage
 			}
 		}
