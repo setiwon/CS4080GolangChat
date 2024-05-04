@@ -22,6 +22,7 @@
       $(function(){
 
         var socket = null;
+        var name = "";
         var msgBox = $("#chatbox textarea");
         var messages = $("#messages");
 
@@ -33,7 +34,7 @@
             return false;
           }
 
-          socket.send(msgBox.val());
+          socket.send(JSON.stringify({ method: "message", body: msgBox.val() }));
           msgBox.val("");
           return false;
 
@@ -42,7 +43,11 @@
         if (!window["WebSocket"]) {
           alert("Error: Your browser does not support web sockets.")
         } else {
+          name = prompt("Please enter your name")
           socket = new WebSocket("ws://{{.Host}}/room");
+          socket.onopen = function () {
+            socket.send(JSON.stringify({ method: "name", body: name }))
+          }
           socket.onclose = function() {
             alert("Connection has been closed.");
           }
