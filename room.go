@@ -66,6 +66,7 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		socket:  socket,
 		receive: make(chan []byte, messageBufferSize),
 		room:    r,
+		name:    "",
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()

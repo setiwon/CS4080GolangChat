@@ -1,13 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 )
 
 // client represents a single chatting user.
 
 type client struct {
-
 	// socket is the web socket for this client.
 	socket *websocket.Conn
 
@@ -16,19 +17,46 @@ type client struct {
 
 	// room is the room this client is chatting in.
 	room *room
+
+	// name of the client
+	name string
 }
 
+type message struct {
+	Method string
+	Body   string
+}
+
+// received message from this client
 func (c *client) read() {
 	defer c.socket.Close()
 	for {
-		_, msg, err := c.socket.ReadMessage()
-		if err != nil {
+		_, msg, recvErr := c.socket.ReadMessage()
+		if recvErr != nil {
 			return
 		}
-		c.room.forward <- msg
+
+		fmt.Printf("%s\n", msg)
+
+		var parsed message
+		parseErr := json.Unmarshal(msg, &parsed)
+		if parseErr != nil {
+			fmt.Printf("Message parse error: %s\n", msg)
+			// if parseErr we can just ignore the message
+		} else {
+			fmt.Printf("%s %s\n", parsed.Method, parsed.Body)
+			switch parsed.Method {
+			case "name":
+				c.name = parsed.Body
+			case "message":
+				c.room.forward <- []byte(c.name + ": " + parsed.Body)
+			}
+		}
+
 	}
 }
 
+// received message from other clients, send to this client
 func (c *client) write() {
 	defer c.socket.Close()
 	for msg := range c.receive {
