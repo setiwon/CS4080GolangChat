@@ -56,6 +56,7 @@ func (c *client) read() {
 				c.room.forward <- encodedMessage
 			}
 		}
+
 	}
 }
 
