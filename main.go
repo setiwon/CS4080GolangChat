@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -24,11 +26,32 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.templ.Execute(w, r)
 }
 
+// Initialize the SQLite database
+func initDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "chat.db")
+	if err != nil {
+		log.Fatal("Error opening database:", err)
+	}
+	createTable := `
+	CREATE TABLE IF NOT EXISTS messages (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		message TEXT
+	);`
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatal("Error creating table:", err)
+	}
+	return db
+}
+
 func main() {
 	var addr = flag.String("addr", ":8080", "The addr of the application.")
 	flag.Parse() // parse the flags
 
-	r := newRoom()
+	db := initDB()
+	defer db.Close()
+
+	r := newRoom(db)
 
 	http.Handle("/", &templateHandler{filename: "chat.html"})
 	http.Handle("/room", r)
