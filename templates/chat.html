@@ -82,9 +82,22 @@
 
         $("#file-input").change(function() {
           // Handle file upload here
-          var file = $(this).prop("files")[0];
+          const file = $(this).prop("files")[0];
           // You can send this file via WebSocket
           console.log("File selected:", file);
+          if (!file) {
+            alert('Please select a file.');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const fileData = event.target.result;
+            // Establish WebSocket connection
+            // Send file as Blob to server
+            socket.send(fileData);
+            console.log('File sent successfully.');
+          };
         });
 
         if (!window["WebSocket"]) {
@@ -118,7 +131,7 @@
           }
         }
 
-      });
+    });
 
     </script>
   </body>
