@@ -10,6 +10,7 @@ import (
 	"html"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -97,7 +98,7 @@ func (c *client) read() {
 				fmt.Printf("File '%s' saved as '%s'", metadata.Name, filePath)
 
 				encodedMessage, _ := json.Marshal(map[string]string{
-					"sender": c.name, "method": "file", "name": escapedName, "path": filePath,
+					"sender": c.name, "method": "file", "name": escapedName, "path": path.Join(FilesServerPath, sha+ext),
 				})
 				c.room.forward <- encodedMessage
 
