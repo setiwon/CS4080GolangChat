@@ -73,8 +73,8 @@ func main() {
 
 	r := newRoom(db)
 
+	http.Handle(FilesServerPath+"/", http.StripPrefix(FilesServerPath, http.FileServer(http.Dir(FilesRoot))))
 	http.Handle("/", &templateHandler{filename: "chat.html"})
-	http.Handle(FilesServerPath, http.FileServer(http.Dir(FilesRoot)))
 	http.Handle("/room", r)
 
 	// get the room going

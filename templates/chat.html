@@ -119,18 +119,27 @@
           }
           socket.onmessage = function(e) {
             let data = JSON.parse(e.data);
+            let messageText;
+            if (data.method == "message") {
+                messageText = data.message;
+            }
+            else if (data.method == "file") {
+                const linkColor = data.sender === name ? "link-light" : "link-dark"
+                const fileUrl = window.location.origin + "/" + data.path
+                messageText = `<a class="${linkColor}" href="${fileUrl}">${data.name}</a>`;
+            }
             if (data.sender === name) {
               // no longer vulnerable to XSS!
               messages.append(`
               <div class="d-flex justify-content-end">
-                <div class="message-bubble bg-primary text-white">${data.message}</li>
+                <div class="message-bubble bg-primary text-white">${messageText}</li>
               </div>
               `);
             } else {
               messages.append(`
               <div class="d-flex justify-content-start">
                 <div class="message-label">${data.sender}</div>
-                <div class="message-bubble bg-light text-dark">${data.message}</li>
+                <div class="message-bubble bg-light text-dark">${messageText}</li>
               </div>
               `);
             }
