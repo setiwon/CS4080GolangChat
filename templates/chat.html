@@ -8,10 +8,19 @@
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
     <style>
+        .container {
+            padding: 16px;
+            max-width: 740px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            height: 100vh;
+        }
         .message-container {
-            height: 650px; /* Set the desired height for the messages container */
+            height: 100%;
             overflow-y: auto; /* Enable vertical scrollbar */
             scroll-behavior: smooth; /* Smooth scrolling */
+            flex-grow: 1;
         }
         .message-bubble {
             max-width: 70%;
@@ -24,13 +33,6 @@
             /* font-weight: bold; */
             margin-right: 10px;
             margin-top: 0.75rem;
-        }
-        textarea {
-            resize: none;
-        }
-        .container {
-            padding-top: 32px;
-            max-width: 700px;
         }
     </style>
 
