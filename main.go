@@ -11,6 +11,10 @@ import (
 	"text/template"
 )
 
+const (
+	FilesRoot = "./files"
+)
+
 // templ represents a single template
 type templateHandler struct {
 	once     sync.Once

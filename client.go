@@ -2,12 +2,16 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"html"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // client represents a single chatting user.
@@ -56,10 +60,10 @@ func (c *client) read() {
 				fmt.Printf("%s %s\n", parsed.Method, parsed.Body)
 				switch parsed.Method {
 				case "name":
-					c.name = parsed.Body
+					c.name = html.EscapeString(parsed.Body)
 				case "message":
 					escaped := html.EscapeString(parsed.Body)
-					encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "message": escaped})
+					encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "method": "message", "message": escaped})
 					c.room.forward <- encodedMessage
 				}
 			}
@@ -74,17 +78,28 @@ func (c *client) read() {
 			if parseErr != nil {
 				log.Println("Metadata parse error.")
 			} else {
-				// TODO: ensure files dir, make variable?
-				writeErr := os.WriteFile("files/testfile", msg[metadataEndIdx+1:], 0644)
+				fmt.Printf("File received, name: '%s' type: '%s\n'", metadata.Name, metadata.Type)
+				escapedName := html.EscapeString(metadata.Name)
+				file := msg[metadataEndIdx+1:]
+				// create filename based on hash
+				hasher := sha256.New()
+				hasher.Write(file)
+				sha := base32.StdEncoding.EncodeToString(hasher.Sum(nil))
+				// get file extension
+				ext := escapedName[strings.LastIndex(escapedName, "."):]
+				filePath := filepath.Join(FilesRoot, sha+ext)
+				// write to "object store" aka disk
+				writeErr := os.WriteFile(filePath, msg[metadataEndIdx+1:], 0644)
 				if writeErr != nil {
 					log.Println("File write error.")
 				}
 
-				fmt.Printf("File received, name: '%s' type: '%s\n'", metadata.Name, metadata.Type)
+				fmt.Printf("File '%s' saved as '%s'", metadata.Name, filePath)
 
-				//escaped := html.EscapeString(parsed.Body)
-				//encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "message": escaped})
-				//c.room.forward <- encodedMessage
+				encodedMessage, _ := json.Marshal(map[string]string{
+					"sender": c.name, "method": "file", "name": escapedName, "path": filePath,
+				})
+				c.room.forward <- encodedMessage
 
 			}
 		}
