@@ -85,7 +85,7 @@ func (c *client) read() {
 				// create filename based on hash
 				hasher := sha256.New()
 				hasher.Write(file)
-				sha := base32.StdEncoding.EncodeToString(hasher.Sum(nil))
+				sha := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(hasher.Sum(nil))
 				// get file extension
 				ext := escapedName[strings.LastIndex(escapedName, "."):]
 				filePath := filepath.Join(FilesRoot, sha+ext)
