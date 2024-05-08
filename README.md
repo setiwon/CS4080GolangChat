@@ -1,4 +1,4 @@
-# Go Chat Application
+# Go Chat App
 
 This is a simple chat application built with Go programming language using WebSocket for real-time communication.
 
