@@ -5,10 +5,10 @@ This is a simple chat application built with Go programming language using WebSo
 ## Group Members
 
 - Wesley Dam
-- Joseph Setiawan
 - Amar Gandhi
-- Samuel Araya
 - Phu Truong
+- Joseph Setiawan
+- Samuel Araya
 
 ## Features
 
