@@ -89,15 +89,21 @@
             alert('Please select a file.');
             return;
           }
-
-          const reader = new FileReader();
-          reader.onload = function(event) {
-            const fileData = event.target.result;
-            // Establish WebSocket connection
-            // Send file as Blob to server
-            socket.send(fileData);
-            console.log('File sent successfully.');
-          };
+          file.arrayBuffer().then((arrayBuffer) => {
+            let metadata = JSON.stringify({name: file.name, type: file.type})
+            let metadataArray = new TextEncoder("utf-8").encode(metadata); // json -> string -> utf-8 array
+            let buf = new Uint8Array(metadataArray.length + 1 + arrayBuffer.byteLength)
+            // metadata
+            buf.set(metadataArray)
+            // seperator char
+            buf.set(new TextEncoder().encode("\x02"), metadataArray.length)
+            // file data
+            buf.set(new Uint8Array(arrayBuffer), metadataArray.length + 1)
+            // wrap with blob to send with websocket
+            const blob = new Blob([buf], {type: file.type});
+            console.log(blob);
+            socket.send(blob)
+          });
         });
 
         if (!window["WebSocket"]) {
