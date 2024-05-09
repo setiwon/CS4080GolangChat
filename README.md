@@ -1,1 +1,2 @@
-# CS4080GolangChat
+- [Build a Golang Chat Application Using Websockets](https://www.youtube.com/watch?v=y036l6pvVEs&t=213s&ab_channel=EsotericTech): Esoteric Tech's YouTube Video
+- [https://github.com/EsotericTech/chatapp](https://github.com/EsotericTech/chatapp): Esoteric Tech's Source Code
