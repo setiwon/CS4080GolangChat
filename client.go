@@ -1,11 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
-	"html"
-
 	"github.com/gorilla/websocket"
+	"html"
+	"log"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
 )
 
 // client represents a single chatting user.
@@ -29,34 +36,74 @@ type clientMessage struct {
 	Body   string
 }
 
+type fileMetadata struct {
+	Name string
+	Type string
+}
+
 // received message from this client
 func (c *client) read() {
 	defer c.socket.Close()
 	for {
-		_, msg, recvErr := c.socket.ReadMessage()
+		messageType, msg, recvErr := c.socket.ReadMessage()
 		if recvErr != nil {
 			return
 		}
 
-		fmt.Printf("%s\n", msg)
+		if messageType == websocket.TextMessage {
+			fmt.Printf("%s\n", msg)
 
-		var parsed clientMessage
-		parseErr := json.Unmarshal(msg, &parsed)
-		if parseErr != nil {
-			fmt.Printf("Message parse error: %s\n", msg)
-			// if parseErr we can just ignore the message
-		} else {
-			fmt.Printf("%s %s\n", parsed.Method, parsed.Body)
-			switch parsed.Method {
-			case "name":
-				c.name = parsed.Body
-			case "message":
-				escaped := html.EscapeString(parsed.Body)
-				encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "message": escaped})
+			var parsed clientMessage
+			parseErr := json.Unmarshal(msg, &parsed)
+			if parseErr != nil {
+				fmt.Printf("Message parse error: \n")
+			} else {
+				fmt.Printf("%s %s\n", parsed.Method, parsed.Body)
+				switch parsed.Method {
+				case "name":
+					c.name = html.EscapeString(parsed.Body)
+				case "message":
+					escaped := html.EscapeString(parsed.Body)
+					encodedMessage, _ := json.Marshal(map[string]string{"sender": c.name, "method": "message", "message": escaped})
+					c.room.forward <- encodedMessage
+				}
+			}
+		} else if messageType == websocket.BinaryMessage {
+			metadataEndIdx := bytes.IndexByte(msg, byte('\x02'))
+			if metadataEndIdx == -1 {
+				log.Println("Metadata seperator not found.")
+			}
+
+			var metadata fileMetadata
+			parseErr := json.Unmarshal(msg[:metadataEndIdx], &metadata)
+			if parseErr != nil {
+				log.Println("Metadata parse error.")
+			} else {
+				fmt.Printf("File received, name: '%s' type: '%s\n'", metadata.Name, metadata.Type)
+				escapedName := html.EscapeString(metadata.Name)
+				file := msg[metadataEndIdx+1:]
+				// create filename based on hash
+				hasher := sha256.New()
+				hasher.Write(file)
+				sha := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(hasher.Sum(nil))
+				// get file extension
+				ext := escapedName[strings.LastIndex(escapedName, "."):]
+				filePath := filepath.Join(FilesRoot, sha+ext)
+				// write to "object store" aka disk
+				writeErr := os.WriteFile(filePath, msg[metadataEndIdx+1:], 0644)
+				if writeErr != nil {
+					log.Println("File write error.")
+				}
+
+				fmt.Printf("File '%s' saved as '%s'", metadata.Name, filePath)
+
+				encodedMessage, _ := json.Marshal(map[string]string{
+					"sender": c.name, "method": "file", "name": escapedName, "path": path.Join(FilesServerPath, sha+ext),
+				})
 				c.room.forward <- encodedMessage
+
 			}
 		}
-
 	}
 }
 
